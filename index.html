@@ -308,10 +308,11 @@
 <body>
     <div class="insta-story">
         <div class="screen active" id="screen-login">
-            <div class="top-bar">
-                <div class="profile-pic"><div class="profile-pic-inner"></div></div>
+            <div class="top-bar
+"><div class="profile-pic"><div class="profile-pic-inner"></div></div>
+
                 <div class="user-info">
-                    <p>@exposicao.culturanegra</p>
+                    <p>@exposicao.culturanegra-9ano</p>
                     <span>Novembro Negro 2026</span>
                 </div>
             </div>
@@ -354,7 +355,7 @@
             <div class="top-bar">
                 <div class="profile-pic"><div class="profile-pic-inner"></div></div>
                 <div class="user-info">
-                    <p>@exposicao.culturanegra</p>
+                    <p>@exposicao.culturanegra-9ano</p>
                     <span>Leaderboard Final 🏆</span>
                 </div>
             </div>
@@ -386,8 +387,8 @@
             { level: 'expert', icon: '🎨', question: 'Qual artista plástico brasileiro é conhecido por suas obras que abordam a experiência negra?', options: ['Vitoria Ribeiro', 'Cícero Dias', 'Adriano de Souza', 'Lídia de Oliveira'], correct: 1, fact: 'Cícero Dias é um dos principais artistas plásticos brasileiros, reconhecido por suas obras que abordam a experiência negra.' },
             { level: 'médio', icon: '🎭', question: 'Qual atriz negra brasileira ganhou destaque internacional por seu papel em filmes e séries de renome?', options: ['Taís Araújo', 'Camila Pitanga', 'Lázaro Ramos', 'Sheron Menezzes'], correct: 0, fact: 'Taís Araújo é uma das atrizes mais respeitadas do Brasil, conhecida por seu talento e por quebrar barreiras na televisão e no cinema.' },
             { level: 'difícil', icon: '🎤', question: 'Qual cantora negra brasileira é conhecida por sua voz potente e por abordar questões sociais em suas músicas?', options: ['Elza Soares', 'Ludmilla', 'Iza', 'Karol Conká'], correct: 0, fact: 'Elza Soares é uma das maiores cantoras do Brasil, reconhecida por sua voz única e por seu engajamento em causas sociais.' },
-            { level: 'fácil', icon: '⚡', question: 'Qual jogador negro brasileiro é conhecido por sua velocidade e habilidade no futebol, sendo um dos maiores ícones do esporte?', options: ['Pelé', 'Ronaldo Fenômeno', 'Neymar Jr.', 'Vini Jr.'], correct: 2, fact: 'Neymar Jr. é um dos jogadores mais talentosos do futebol mundial, conhecido por sua habilidade e velocidade em campo.' },
-            {level: 'expert', icon: '🔬', question: 'Qual cientista negra brasileira é conhecida por seu trabalho pioneiro em biologia molecular e genética?', options: ['Sônia Guimarães', 'Jaqueline Goes de Jesus', 'Katia Bogéa', 'Joana D’Arc Félix'], correct: 2, fact: 'Katia Bogéa é uma das principais pesquisadoras brasileiras em genética, contribuindo significativamente para o entendimento das doenças hereditárias.' }
+            { level: 'fácil', icon: '⚡', question: 'Qual jogador negro brasileiro é conhecido por sua velocidade e habilidade no futebol, sendo um dos maiores ícones do esporte?', options: ['Pelé', 'Ronaldo Fenômeno', 'Neymar Jr.', 'Vini Jr.'], correct: 0, fact: 'Pelé. é um dos jogadores mais talentosos do futebol mundial, conhecido por sua habilidade e popularmente chamado de Rei do Futebol.' },
+            {level: 'hard', icon: '💡', question: 'Qual inventor negro americano é conhecido por suas invenções que revolucionaram a comunicação?', options: ['Benjamin Franklin', 'George Washington Carver', 'Dr. Percy Julian', 'Granville T. Woods'], correct: 3, fact: 'Granville T. Woods foi um dos mais importantes inventores negros dos Estados Unidos, conhecido por suas invenções que revolucionaram a comunicação.' }
         ];
 
         const leaderboard = [
@@ -432,9 +433,23 @@
             });
         }
 
-        function renderLeaderboard() {
+        function getStoredRanking() {
+            try {
+                const savedData = localStorage.getItem('afroQuizRank');
+                if (!savedData) return [...leaderboard];
+                const parsed = JSON.parse(savedData);
+                return Array.isArray(parsed) && parsed.length ? parsed : [...leaderboard];
+            } catch (error) {
+                return [...leaderboard];
+            }
+        }
+
+        function renderRankingList(entries) {
+            const list = [...entries]
+                .sort((a, b) => (b.score ?? b.points ?? 0) - (a.score ?? a.points ?? 0))
+                .slice(0, 5);
+
             const container = document.getElementById('leaderboard');
-            const list = [...leaderboard].sort((a, b) => b.score - a.score).slice(0, 5);
             container.innerHTML = '';
 
             list.forEach((entry, index) => {
@@ -442,22 +457,36 @@
                 row.className = 'rank-item';
                 row.innerHTML = `
                     <span class="rank-name">#${index + 1} ${entry.name}</span>
-                    <span class="rank-score">${entry.score} pts</span>
+                    <span class="rank-score">${entry.score ?? entry.points ?? 0} pts</span>
                 `;
                 container.appendChild(row);
             });
         }
 
+        function renderLeaderboard() {
+            renderRankingList(getStoredRanking());
+        }
+
+        function saveAndShowRanking() {
+            const savedRanking = getStoredRanking();
+            const ranking = [...savedRanking, { name: playerName, score }]
+                .sort((a, b) => (b.score ?? b.points ?? 0) - (a.score ?? a.points ?? 0))
+                .slice(0, 5);
+
+            localStorage.setItem('afroQuizRank', JSON.stringify(ranking));
+            renderRankingList(ranking);
+        }
+
         function startGame() {
             const input = document.getElementById('username');
-            const raw = input.value.trim();
-            playerName = raw ? raw : 'visitante';
-
-            document.getElementById('player-tag').textContent = `@${playerName.replace(/\s+/g, '').toLowerCase()}`;
+            const rawName = (input.value || '').trim();
+            playerName = rawName ? rawName.slice(0, 15) : 'visitante';
+            document.getElementById('player-tag').textContent = `@${playerName}`;
 
             currentQuestionIndex = 0;
             score = 0;
             isAnswered = false;
+
             switchScreen('screen-game');
             renderQuestion();
         }
@@ -545,22 +574,7 @@
         function showEndScreen() {
             const finalScoreText = document.getElementById('final-score-txt');
             finalScoreText.textContent = `Você acertou ${score}/${questions.length}`;
-
-            const playerScore = { name: playerName, score };
-            const ranking = [...leaderboard, playerScore].sort((a, b) => b.score - a.score).slice(0, 5);
-
-            const list = document.getElementById('leaderboard');
-            list.innerHTML = '';
-            ranking.forEach((entry, index) => {
-                const row = document.createElement('div');
-                row.className = 'rank-item';
-                row.innerHTML = `
-                    <span class="rank-name">#${index + 1} ${entry.name}</span>
-                    <span class="rank-score">${entry.score} pts</span>
-                `;
-                list.appendChild(row);
-            });
-
+            saveAndShowRanking();
             switchScreen('screen-end');
         }
 
@@ -568,7 +582,9 @@
             currentQuestionIndex = 0;
             score = 0;
             isAnswered = false;
+            playerName = 'visitante';
             document.getElementById('username').value = '';
+            document.getElementById('player-tag').textContent = '@player';
             switchScreen('screen-login');
         }
 
